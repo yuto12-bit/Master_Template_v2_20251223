@@ -2,7 +2,8 @@
 
 /* --- sim-income.js --- */
 // sim-income.js（scoped）
-// - ID衝突を避けるため、root内で data-role を参照する
+// - ルート（data-component="sim-income"）内だけを触る
+// - ID/グローバル変数の衝突を避ける
 (() => {
   const fmt = (n) => {
     const num = Number(n);
@@ -12,44 +13,45 @@
 
   const calc = (root) => {
     const dailyWageEl = root.querySelector('[data-role="daily-wage"]');
-    const workDaysEl  = root.querySelector('[data-role="work-days"]');
-    const workHoursEl = root.querySelector('[data-role="work-hours"]');
+    const weeklyDaysEl = root.querySelector('[data-role="weekly-days"]');
+    const transportEl = root.querySelector('[data-role="transport"]');
 
-    const monthlyWageEl = root.querySelector('[data-role="monthly-wage"]');
-    const yearlyWageEl  = root.querySelector('[data-role="yearly-wage"]');
+    const dailyOut = root.querySelector('[data-role="display-daily"]');
+    const weeklyOut = root.querySelector('[data-role="display-weekly"]');
+    const transportOut = root.querySelector('[data-role="display-transport"]');
 
-    const dailyOut   = root.querySelector('[data-role="display-daily"]');
-    const monthlyOut = root.querySelector('[data-role="display-monthly"]');
-    const yearlyOut  = root.querySelector('[data-role="display-yearly"]');
+    const monthlyOut = root.querySelector('[data-role="result-monthly"]');
+    const yearlyOut = root.querySelector('[data-role="result-yearly"]');
 
-    if (!dailyWageEl || !workDaysEl || !workHoursEl || !monthlyWageEl || !yearlyWageEl || !dailyOut || !monthlyOut || !yearlyOut) return;
+    if (!dailyWageEl || !weeklyDaysEl || !transportEl || !dailyOut || !weeklyOut || !transportOut || !monthlyOut || !yearlyOut) return;
 
     const daily = Number(dailyWageEl.value || 0);
-    const days  = Number(workDaysEl.value || 0);
-    const hours = Number(workHoursEl.value || 0);
+    const weekly = Number(weeklyDaysEl.value || 0);
+    const transport = Number(transportEl.value || 0);
 
-    // ここは「目安」：日給×日数 → 月収、月収×12 → 年収
-    const monthly = Math.max(0, daily * days);
-    const yearly  = Math.max(0, monthly * 12);
+    // 日給 × 週出勤日数 × 4週 ＋ 交通費（月額）
+    const monthly = Math.max(0, daily * weekly * 4 + transport);
+    const yearly = Math.max(0, monthly * 12);
 
-    dailyOut.textContent   = fmt(daily);
+    dailyOut.textContent = fmt(daily);
+    weeklyOut.textContent = fmt(weekly);
+    transportOut.textContent = fmt(transport);
+
     monthlyOut.textContent = fmt(monthly);
-    yearlyOut.textContent  = fmt(yearly);
-
-    // 入力欄にも反映（任意）
-    monthlyWageEl.value = String(monthly);
-    yearlyWageEl.value  = String(yearly);
+    yearlyOut.textContent = fmt(yearly);
   };
 
   const bind = (root) => {
-    const inputs = root.querySelectorAll("input");
-    inputs.forEach((el) => {
-      el.addEventListener("input", () => calc(root));
-    });
+    // 初期計算
     calc(root);
+
+    // 入力監視
+    root.querySelectorAll('input[type="range"]').forEach((el) => {
+      el.addEventListener('input', () => calc(root));
+    });
   };
 
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-component="sim-income"]').forEach(bind);
   });
 })();
